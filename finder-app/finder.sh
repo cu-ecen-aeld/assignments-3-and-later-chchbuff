@@ -1,6 +1,6 @@
 #!/bin/sh
 
-
+# validate runtime arguments
 if [ $# -lt 2 ]
 then
 	echo "ERROR: Invalid Number of Arguments."
@@ -21,8 +21,19 @@ else
 	fi
 fi
 
+# stores the number of files present in the directory
 filecount=`find $filesdir -type f | wc -l`
+if [ $? -eq 1 ]; then
+	echo "ERROR: running find command to find number of files"
+	exit 1
+fi
+
+# stores number of matching lines found with the search string in the directory
 matchinglinescount=`grep -r $searchstr $filesdir | wc -l`
+if [ $? -eq 1 ]; then
+	echo "ERROR: running grep command to search string"
+	exit 1
+fi
 
 echo "The number of files are $filecount and the number of matching lines are $matchinglinescount"
 exit 0

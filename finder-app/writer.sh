@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# validate runtime arguments
 if [ $# -lt 2 ]
 then
         echo "ERROR: Invalid Number of Arguments."
@@ -11,8 +12,10 @@ then
 else
         writefile=$1
         writestr=$2
+	# extract file directory and file name
 	filedir=`dirname $writefile`
 	filename=`basename $writefile`
+
         if [ ! -d "$filedir" ]
         then
 		mkdir -p $filedir
@@ -21,8 +24,25 @@ else
 			exit 1
 		fi
 	fi
+
 	cd $filedir
+        if [ $? -eq 1 ]; then
+                echo "ERROR: entering $filedir directory"
+                exit 1
+        fi
+
 	touch $filename
-       	echo $writestr > $filename
-	exit 0
+	if [ $? -eq 1 ]; then
+		echo "ERROR: creating $filename"
+		exit 1
+	fi
+
+	echo $writestr > $filename
+	if [ $? -eq 1 ]; then
+                echo "ERROR: writing string to $filename"
+                exit 1
+	else
+		echo "Written string to $filename successfully"
+		exit 0
+        fi
 fi
