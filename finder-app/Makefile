@@ -10,5 +10,5 @@ writer.o: writer.c
 	$(CC) -c $^ $(CFLAGS) -o $@ 
 
 clean:
-	rm *.o writer
+	-rm *.o writer
 
