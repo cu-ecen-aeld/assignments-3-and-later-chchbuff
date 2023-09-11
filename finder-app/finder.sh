@@ -36,4 +36,3 @@ if [ $? -eq 1 ]; then
 fi
 
 echo "The number of files are $filecount and the number of matching lines are $matchinglinescount"
-exit 0

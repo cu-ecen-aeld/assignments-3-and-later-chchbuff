@@ -25,24 +25,11 @@ else
 		fi
 	fi
 
-	cd $filedir
-        if [ $? -eq 1 ]; then
-                echo "ERROR: entering $filedir directory"
-                exit 1
-        fi
-
-	touch $filename
-	if [ $? -eq 1 ]; then
-		echo "ERROR: creating $filename"
-		exit 1
-	fi
-
-	echo $writestr > $filename
+	echo $writestr > $writefile
 	if [ $? -eq 1 ]; then
                 echo "ERROR: writing string to $filename"
                 exit 1
 	else
 		echo "Written string to $filename successfully"
-		exit 0
         fi
 fi
