@@ -48,14 +48,18 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
-    int status = -1;
+    if (NULL == cmd)
+    {
+        return false;
+    }
     int return_value = system(cmd);
-    if (SUCCESS != return_value)
+    if (FAILURE == return_value)
     {
         printf("ERROR executing system call cmd=%s: %s\n", cmd, strerror(errno));
         return false;
     }
     //check for non-zero return value
+    int status = -1;
     if (WIFEXITED(status))
     {
         if (0 == WEXITSTATUS(status))
