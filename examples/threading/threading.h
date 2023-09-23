@@ -7,7 +7,7 @@
  * It should be returned by your thread so it can be freed by
  * the joiner thread.
  */
-struct thread_data{
+typedef struct thread_data{
     /*
      * TODO: add other values your thread will need to manage
      * into this structure, use this structure to communicate
@@ -20,7 +20,10 @@ struct thread_data{
      * if an error occurred.
      */
     bool thread_complete_success;
-};
+    pthread_mutex_t *thread_mutex;
+    int wait_to_obtain_ms;
+    int wait_to_release_ms;
+}thread_data_t;
 
 
 /**
