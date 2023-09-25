@@ -103,14 +103,8 @@ sudo cp ${SYSROOT_PATH}/lib64/libc.so.* ${OUTDIR}/rootfs/lib64
 # TODO: Make device nodes
 cd ${OUTDIR}/rootfs
 echo "Making device nodes"
-if [ ! "/dev/null" ]
-then
-    sudo mknod -m 666 dev/null c 1 3
-fi
-if [ ! "/dev/console" ]
-then
-    sudo mknod -m 666 dev/console c 5 1
-fi
+sudo mknod -m 666 dev/null c 1 3
+sudo mknod -m 666 dev/console c 5 1
 
 # TODO: Clean and build the writer utility
 cd "$FINDER_APP_DIR"
