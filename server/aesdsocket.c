@@ -10,7 +10,7 @@
  *****************************************************************************/
 /**
  * @file aesdsocket.c
- * @brief This file contains functionality to write a string to a file.
+ * @brief This file contains functionality of socket application.
  *
  * To compile: make
  *
@@ -63,7 +63,7 @@ void signal_handler(int signo);
  *
  * @param void
  *
- * @return void
+ * @return int
  */
 static int start_daemon(void)
 {
