@@ -1,10 +1,11 @@
-CC=$(CROSS_COMPILE)gcc
-CFLAGS=-Wall -Werror -g
+CC ?= $(CROSS_COMPILE)gcc
+CFLAGS ?= -Wall -Werror -g 
+LDFLAGS ?= -pthread -lrt
 
 all: aesdsocket
 
 aesdsocket: aesdsocket.o
-	$(CC) $^ -o $@
+	$(CC) $^ $(LDFLAGS) -o $@
 
 aesdsocket.o: aesdsocket.c
 	$(CC) -c $^ $(CFLAGS) -o $@ 
