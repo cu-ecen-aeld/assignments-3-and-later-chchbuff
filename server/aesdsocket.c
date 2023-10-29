@@ -369,27 +369,17 @@ void *recv_and_send_thread(void *thread_node)
         } while (!packet_complete);
 
         packet_complete = false;
-        
+
         close(file_fd);
         /* open file in read mode */
-        file_fd = open(FILENAME, O_RDWR, 
-                       S_IRUSR | S_IRGRP | S_IROTH);
+        file_fd = open(FILENAME, O_RDONLY, S_IRUSR | S_IRGRP | S_IROTH);
         if (FAILURE == file_fd)
         {
-            syslog(LOG_ERR, "Error opening %s file: %s", FILENAME, strerror(errno));
+            syslog(LOG_ERR, "Error opening %s file: %s for read", FILENAME, strerror(errno));
             status = FAILURE;
             goto exit;
         }
-#if 0
-        /* seek the file fd to start of file to read contents */
-        off_t offset = lseek(file_fd, 0, SEEK_SET);
-        if (FAILURE == offset)
-        {
-            syslog(LOG_PERROR, "lseek: %s", strerror(errno));
-            status = FAILURE;
-            goto exit;
-        }
- #endif
+
         /* read file contents till EOF */
         int read_bytes = 0;
         int send_bytes = 0;
