@@ -111,6 +111,10 @@ const char * aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer,
     {
         buffer->full = true;
     }
+    else
+    {
+        buffer->full = false;
+    }
     return free_buffptr;
 }
 
