@@ -41,13 +41,21 @@
 #include "queue.h"
 
 /* Macro definitions */
+
 #define ARG_COUNT    (2)
 #define SUCCESS      (0)
 #define FAILURE      (-1)
 #define ERROR        (-1)
 #define PORT         "9000"
 #define MAX_CONNECTIONS_ALLOWED   (10)
+
+#define USE_AESD_CHAR_DEVICE   (1)
+
+#if (USE_AESD_CHAR_DEVICE == 0)
 #define FILENAME      "/var/tmp/aesdsocketdata"
+#elif (USE_AESD_CHAR_DEVICE == 1)
+#define FILENAME      "/dev/aesdchar"
+#endif
 #define MAX_BUFF_LEN   (1024)
 #define TIMER_DELAY_PERIOD   (10)
 
@@ -149,11 +157,14 @@ static int start_daemon(void)
  */
 static void close_app(void)
 {
+#if (USE_AESD_CHAR_DEVICE == 0)
     /* deletes the file */
     if (FAILURE == unlink(FILENAME))
     {
        syslog(LOG_PERROR, "unlink %s: %s", FILENAME, strerror(errno));
     }
+#endif
+
     if (FAILURE == shutdown(socket_fd, SHUT_RDWR))
     {
         syslog(LOG_PERROR, "shutdown: %s", strerror(errno));
@@ -179,6 +190,7 @@ void signal_handler(int signo)
     }
 }
 
+#if (USE_AESD_CHAR_DEVICE == 0)
 /**
  * @brief Handles timer thread functionality by writing timestamp for every 10 secs.
  *
@@ -279,6 +291,7 @@ exit:
                            (node->thread_complete_success = true);
      return thread_node;
 }
+#endif
 
 /**
  * @brief Handles socket recv and send data.
@@ -357,14 +370,16 @@ void *recv_and_send_thread(void *thread_node)
 
         packet_complete = false;
 
-        /* seek the file fd to start of file to read contents */
-        off_t offset = lseek(file_fd, 0, SEEK_SET);
-        if (FAILURE == offset)
+        close(file_fd);
+        /* open file in read mode */
+        file_fd = open(FILENAME, O_RDONLY, S_IRUSR | S_IRGRP | S_IROTH);
+        if (FAILURE == file_fd)
         {
-            syslog(LOG_PERROR, "lseek: %s", strerror(errno));
+            syslog(LOG_ERR, "Error opening %s file: %s for read", FILENAME, strerror(errno));
             status = FAILURE;
             goto exit;
         }
+
         /* read file contents till EOF */
         int read_bytes = 0;
         int send_bytes = 0;
@@ -522,7 +537,7 @@ int main(int argc, char* argv[])
         status = FAILURE;
         goto exit;
     }
-
+#if (USE_AESD_CHAR_DEVICE == 0)
     /* create node for timer thread */
     data_ptr = (socket_node_t *)malloc(sizeof(socket_node_t));
     if (NULL == data_ptr)
@@ -545,7 +560,7 @@ int main(int argc, char* argv[])
         goto exit;
     } 
     SLIST_INSERT_HEAD(&head, data_ptr, node_count);
-
+#endif
     /* exit accepting connections once signal is received */
     while (!exit_condition)
     {
@@ -593,7 +608,6 @@ int main(int argc, char* argv[])
         {
             if (data_ptr->thread_complete_success == true)
             {
-                syslog(LOG_INFO, "1 Joined thread id: %ld", data_ptr->thread_id);
                 pthread_join(data_ptr->thread_id, NULL);
                 SLIST_REMOVE(&head, data_ptr, socket_node, node_count);
                 free(data_ptr);
@@ -604,8 +618,7 @@ int main(int argc, char* argv[])
 
 exit:
     close_app();
-    /* destroy mutex */
-    pthread_mutex_destroy(&thread_mutex);
+
     /* delete timer node from socket list */
     while (!SLIST_EMPTY(&head))
     {
@@ -616,6 +629,9 @@ exit:
         free(data_ptr);
         data_ptr = NULL;
     }
+    /* destroy mutex */
+    pthread_mutex_destroy(&thread_mutex);
+
     return status;
 }
 
