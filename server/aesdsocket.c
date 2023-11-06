@@ -40,6 +40,8 @@
 #include <time.h>
 #include "queue.h"
 
+#include "../aesd-char-driver/aesd_ioctl.h"
+
 /* Macro definitions */
 
 #define ARG_COUNT    (2)
@@ -52,12 +54,14 @@
 #define USE_AESD_CHAR_DEVICE   (1)
 
 #if (USE_AESD_CHAR_DEVICE == 0)
-#define FILENAME      "/var/tmp/aesdsocketdata"
+    #define FILENAME      "/var/tmp/aesdsocketdata"
 #elif (USE_AESD_CHAR_DEVICE == 1)
-#define FILENAME      "/dev/aesdchar"
+    #define FILENAME      "/dev/aesdchar"
 #endif
+
 #define MAX_BUFF_LEN   (1024)
 #define TIMER_DELAY_PERIOD   (10)
+#define MATCHED_INPUTS_COUNT      (2)
 
 /* Global definitions */
 static volatile sig_atomic_t exit_condition = 0;
@@ -309,6 +313,9 @@ void *recv_and_send_thread(void *thread_node)
     socket_node_t *node = NULL;
     int status = FAILURE;
     int file_fd = -1;
+#if (USE_AESD_CHAR_DEVICE == 1)
+    const char *ioctl_str = "AESDCHAR_IOCSEEKTO:";
+#endif
     if (NULL == thread_node)
     {
         return NULL;
@@ -338,7 +345,26 @@ void *recv_and_send_thread(void *thread_node)
                 status = FAILURE;
                 goto exit;
             }
-            
+#if (USE_AESD_CHAR_DEVICE == 1)
+            if (SUCCESS == strncmp(buffer, ioctl_str, strlen(ioctl_str)))
+            {
+                struct aesd_seekto seek_info;
+                if (MATCHED_INPUTS_COUNT != sscanf(buffer, "AESDCHAR_IOCSEEKTO:%d,%d",
+                                                   &seek_info.write_cmd,
+                                                   &seek_info.write_cmd_offset))
+                {
+                    syslog(LOG_PERROR, "sscanf: %s", strerror(errno));
+                }
+                else
+                {
+                    if(SUCCESS != ioctl(file_fd, AESDCHAR_IOCSEEKTO, &seek_info))
+                    {
+                        syslog(LOG_PERROR, "ioctl: %s", strerror(errno));
+                    }
+                }
+                goto read_data;
+            }
+#endif
             if (SUCCESS != pthread_mutex_lock(node->thread_mutex))
             {
                 syslog(LOG_PERROR, "pthread_mutex_lock: %s", strerror(errno));
@@ -369,7 +395,7 @@ void *recv_and_send_thread(void *thread_node)
         } while (!packet_complete);
 
         packet_complete = false;
-
+#if (USE_AESD_CHAR_DEVICE == 0)
         close(file_fd);
         /* open file in read mode */
         file_fd = open(FILENAME, O_RDONLY, S_IRUSR | S_IRGRP | S_IROTH);
@@ -379,7 +405,8 @@ void *recv_and_send_thread(void *thread_node)
             status = FAILURE;
             goto exit;
         }
-
+#endif
+read_data:
         /* read file contents till EOF */
         int read_bytes = 0;
         int send_bytes = 0;
