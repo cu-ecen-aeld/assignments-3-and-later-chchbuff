@@ -406,11 +406,11 @@ void *recv_and_send_thread(void *thread_node)
             goto exit;
         }
 #endif
-read_data:
         /* read file contents till EOF */
         int read_bytes = 0;
         int send_bytes = 0;
-        do
+read_data:
+       do
         {
             memset(buffer, 0, MAX_BUFF_LEN);
             read_bytes = read(file_fd, buffer, MAX_BUFF_LEN);
